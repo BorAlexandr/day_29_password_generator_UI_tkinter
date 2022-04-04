@@ -1,3 +1,4 @@
+import json
 from tkinter import *
 from tkinter import messagebox
 import random
@@ -26,27 +27,55 @@ def generate_password():
     password_text.insert(0, gen_password)
 
 # ---------------------------- SAVE PASSWORD ------------------------------- #
+def search_data():
+    website = website_text.get().lower()
+    try:
+        with open("data.json", "r") as read_file:
+            data = json.load(read_file)
+            try:
+                messagebox.showinfo(title="Search results", message=f"Username/email: {data[website]['email']}\n"
+                                                                    f"Password: {data[website]['password']}")
+            except KeyError:
+                messagebox.showinfo(title="Search results", message=f"{website} is not found")
+
+    except FileNotFoundError:
+        messagebox.showinfo(title="JSON file is not create", message="Please write at least one account")
+
+
+
 # create function for save input values
 
-def get_data(website, email, password):
-    get_website = website.get()
-    get_email = email.get()
-    get_password = password.get()
-    return get_email, get_website, get_password
-
 def save():
-    website, email, password = get_data(website_text, username_text, password_text)
+    website = website_text.get().lower()
+    email = username_text.get().lower()
+    password = password_text.get().lower()
+    current_data = {
+        website: {
+            "email": email,
+            "password": password
+        }
+    }
 
     if not website or not email or not password:
         messagebox.showinfo(title="input window is empty", message="Please, write data in input window")
 
     else:
-        is_ok = messagebox.askokcancel(title="Check parameters", message=f"Your website: {website}\n"
-                                                                         f"Your email: {email}\n"
-                                                                         f"Your password: {password}")
-        if is_ok:
-            with open("data.txt", "a") as file:
-                file.write(f"{website} | {email} | {password}\n")
+        try:
+            # reading old and update current data
+            with open("data.json", "r") as read_file:
+                data = json.load(read_file)
+                data.update(current_data)
+            # write data in json file
+            with open("data.json", "w") as write_file:
+                json.dump(data, write_file, indent=4)
+
+        except FileNotFoundError:
+            # if file is not create we are creating new data.json
+            with open("data.json", "w") as write_file:
+                json.dump(current_data, write_file, indent=4)
+
+        finally:
+            # in any way we are clearing input fields
             website_text.delete(0, "end")
             password_text.delete(0, "end")
 
@@ -68,9 +97,9 @@ canvas.grid(column=0, row=0, columnspan=2)
 website_label = Label(text="Website:")
 website_label.grid(column=0, row=1)
 username_label = Label(text="Email/Username:")
-username_label.grid(column=0, row=2)
+username_label.grid(column=0, row=3)
 password_label = Label(text="Password:")
-password_label.grid(column=0, row=3)
+password_label.grid(column=0, row=4)
 
 # entries data
 website_text = Entry(width=35)
@@ -80,15 +109,17 @@ website_text.grid(column=1, row=1, columnspan=2)
 username_text = Entry(width=35)
 username_text.insert(0, "example@mail.com")
 
-username_text.grid(column=1, row=2, columnspan=2)
+username_text.grid(column=1, row=3, columnspan=2)
 
 password_text = Entry(width=35)
-password_text.grid(column=1, row=3)
+password_text.grid(column=1, row=4)
 
 # -------------------------- buttons----------------------------------#
 generate_pass = Button(text="Generate password", width=32, command=generate_password)
-generate_pass.grid(column=1, row=4)
+generate_pass.grid(column=1, row=5)
 data_add = Button(text="Add", width=32, command=save)
-data_add.grid(column=1, row=5)
+data_add.grid(column=1, row=6)
+search = Button(text="Search", width=32, command=search_data)
+search.grid(column=1, row=2, columnspan=2)
 
 window.mainloop()
